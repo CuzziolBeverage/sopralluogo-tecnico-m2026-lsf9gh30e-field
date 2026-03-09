@@ -700,10 +700,14 @@ textarea {
       <span class="section-num">04</span>
     </div>
 
-    <div class="data-row" style="padding-top:24px;">
-      <div class="field-group" style="max-width:220px;">
+    <div class="data-row" style="padding-top:24px; display:grid; grid-template-columns:200px 1fr; gap:20px; align-items:start;">
+      <div class="field-group">
         <label for="dataModulo">Data <span class="req">*</span></label>
         <input type="date" id="dataModulo">
+      </div>
+      <div class="field-group">
+        <label for="nomeAgente">Agente di riferimento <span class="req">*</span></label>
+        <input type="text" id="nomeAgente" placeholder="Nome e Cognome dell'agente">
       </div>
     </div>
 
@@ -848,10 +852,12 @@ async function generatePDF() {
   const numVie = document.getElementById('numVie').value.trim();
   const prodotti = document.getElementById('prodotti').value.trim();
   const altreInfo = document.getElementById('altreInfo').value.trim();
+  const nomeAgente = document.getElementById('nomeAgente').value.trim();
 
   if (!nomeLocale) { showToast('⚠️  Inserisci il Nome del Locale'); return; }
   if (!nomeReferente) { showToast('⚠️  Inserisci il Nome del Referente'); return; }
   if (!telefono) { showToast('⚠️  Inserisci il Telefono'); return; }
+  if (!nomeAgente) { showToast('⚠️  Inserisci il Nome dell\'Agente'); return; }
   if (!hasSigned) { showToast('⚠️  Apponi la firma prima di generare il PDF'); return; }
 
   const data = getDataFormatted();
@@ -1005,9 +1011,10 @@ async function generatePDF() {
   // ── SEZIONE 4 — DATA E FIRMA ─────────────────────────────────────
   secTitle('DATA E FIRMA', '04');
 
-  // Campo data (metà larghezza)
+  // Campo data + agente (metà larghezza ciascuno)
   const hw = (cw - 4) / 2;
   fieldBox('DATA', data, mg, hw);
+  fieldBox('AGENTE DI RIFERIMENTO', nomeAgente, mg + hw + 4, hw);
   y += 15 + 3;
 
   // Firma: calcola altezza disponibile fino al footer
