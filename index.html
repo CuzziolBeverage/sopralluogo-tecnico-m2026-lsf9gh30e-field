@@ -936,13 +936,20 @@ const placeholder = document.getElementById('firmaPlaceholder');
 let isDrawing = false;
 let lastX = 0, lastY = 0;
 let hasSigned = false;
+let signatureBackup = null; // salva la firma come dataURL dopo ogni tratto
 
 function resizeCanvas() {
   const wrapper = canvas.parentElement;
   const rect = wrapper.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = rect.width * dpr;
-  canvas.height = 170 * dpr;
+  const newW = rect.width * dpr;
+  const newH = 170 * dpr;
+
+  // Salva la firma prima di resizare
+  const backup = hasSigned ? canvas.toDataURL() : null;
+
+  canvas.width = newW;
+  canvas.height = newH;
   canvas.style.width = rect.width + 'px';
   canvas.style.height = '170px';
   ctx.scale(dpr, dpr);
@@ -950,9 +957,28 @@ function resizeCanvas() {
   ctx.lineWidth = 2.4;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
+
+  // Ripristina la firma dopo il resize
+  if (backup) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, rect.width, 170);
+    img.src = backup;
+  }
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+
+// Ripristina firma se il canvas viene svuotato dallo scroll (visibilitychange / pageshow)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && hasSigned && signatureBackup) {
+    const dpr = window.devicePixelRatio || 1;
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width / dpr, canvas.height / dpr);
+    };
+    img.src = signatureBackup;
+  }
+});
 
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
@@ -978,7 +1004,12 @@ function draw(e) {
   hasSigned = true;
 }
 
-function endDraw() { isDrawing = false; }
+function endDraw() {
+  if (!isDrawing) return;
+  isDrawing = false;
+  // Salva backup della firma al termine di ogni tratto
+  if (hasSigned) signatureBackup = canvas.toDataURL();
+}
 
 canvas.addEventListener('mousedown', startDraw);
 canvas.addEventListener('mousemove', draw);
@@ -991,6 +1022,7 @@ canvas.addEventListener('touchend', endDraw);
 function clearSignature() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   hasSigned = false;
+  signatureBackup = null;
   placeholder.style.opacity = '1';
 }
 
